@@ -5340,7 +5340,7 @@
     }
 ];
     
-    // 로컬 스토리지 데이터 연동
+    // 로컬 스토리지 데이터 연동 (문제 식별은 originalQuizData 인덱스로 함 - qNum 중복 시 한 문제만 저장되도록)
     let savedQuestions = JSON.parse(localStorage.getItem('sqld_saved')) || [];
     let wrongQuestions = JSON.parse(localStorage.getItem('sqld_wrong')) || [];
     
@@ -5419,17 +5419,17 @@
         }
     }
 
-    // --- 개별 삭제 함수 ---
-    function removeSaved(qNum) {
-        savedQuestions = savedQuestions.filter(id => id !== qNum);
+    // --- 개별 삭제 함수 (인덱스 기준) ---
+    function removeSaved(idx) {
+        savedQuestions = savedQuestions.filter(i => i !== idx);
         localStorage.setItem('sqld_saved', JSON.stringify(savedQuestions));
-        showSavedQuestions(); // 즉시 새로고침
+        showSavedQuestions();
     }
 
-    function removeWrong(qNum) {
-        wrongQuestions = wrongQuestions.filter(id => id !== qNum);
+    function removeWrong(idx) {
+        wrongQuestions = wrongQuestions.filter(i => i !== idx);
         localStorage.setItem('sqld_wrong', JSON.stringify(wrongQuestions));
-        showWrongNotes(); // 즉시 새로고침
+        showWrongNotes();
     }
 
     // --- 퀴즈 풀기 시작 (순서대로 / 랜덤 / 이어서) ---
@@ -5543,23 +5543,30 @@
         }
     }
 
+    // 현재 문항이 originalQuizData에서 몇 번째인지 찾기 (세션 복원 시 객체 참조가 달라서 indexOf 불가 → 내용으로 비교)
+    function getOriginalIndex(q) {
+        if (!q) return -1;
+        return originalQuizData.findIndex(item =>
+            item.qNum === q.qNum && item.question === q.question &&
+            item.answer === q.answer && item.options && q.options &&
+            item.options.length === q.options.length && item.options[0] === q.options[0]
+        );
+    }
+
     function toggleSave() {
-        const qNum = activeQuizData[currentIdx].qNum;
-        const indexInArray = savedQuestions.indexOf(qNum);
-        
-        if (indexInArray === -1) {
-            savedQuestions.push(qNum); 
-        } else {
-            savedQuestions.splice(indexInArray, 1); 
-        }
+        const idx = getOriginalIndex(activeQuizData[currentIdx]);
+        if (idx === -1) return;
+        const at = savedQuestions.indexOf(idx);
+        if (at === -1) savedQuestions.push(idx);
+        else savedQuestions.splice(at, 1);
         localStorage.setItem('sqld_saved', JSON.stringify(savedQuestions));
         updateSaveBtnUI();
     }
 
     function updateSaveBtnUI() {
         const btn = document.getElementById('save-btn');
-        const qNum = activeQuizData[currentIdx].qNum;
-        if (savedQuestions.includes(qNum)) {
+        const idx = getOriginalIndex(activeQuizData[currentIdx]);
+        if (idx !== -1 && savedQuestions.includes(idx)) {
             btn.className = 'save-btn active';
             btn.innerText = '★ 문제 저장됨';
         } else {
@@ -5586,9 +5593,12 @@
             btns[sel - 1].classList.add('wrong'); 
             btns[q.answer - 1].classList.add('correct'); 
             
-            if (isNewAttempt && !wrongQuestions.includes(q.qNum)) {
-                wrongQuestions.push(q.qNum);
-                localStorage.setItem('sqld_wrong', JSON.stringify(wrongQuestions));
+            if (isNewAttempt) {
+                const wrongIdx = getOriginalIndex(q);
+                if (wrongIdx !== -1 && !wrongQuestions.includes(wrongIdx)) {
+                    wrongQuestions.push(wrongIdx);
+                    localStorage.setItem('sqld_wrong', JSON.stringify(wrongQuestions));
+                }
             }
         }
         
@@ -5636,34 +5646,26 @@
         const container = document.getElementById('list-container');
         container.innerHTML = '';
         
-        const targetData = originalQuizData.filter(q => idArray.includes(q.qNum));
-        
-        if (targetData.length === 0) {
+        // idArray는 originalQuizData 인덱스 배열 (qNum 중복 시 한 문제만 표시)
+        const targetList = idArray.map(i => ({ idx: i, q: originalQuizData[i] })).filter(x => x.q != null);
+        if (targetList.length === 0) {
             container.innerHTML = `<div class="empty-msg">아직 기록된 문제가 없습니다.</div>`;
             return;
         }
-        
-        // 최신순(역순)으로 보여주기
-        targetData.reverse().forEach(q => {
+        targetList.reverse().forEach(({ idx, q }) => {
             let imgHTML = "";
             if (q.imgLink && q.imgLink !== "") {
                 imgHTML = `<a href="${q.viewLink}" target="_blank"><img src="${q.imgLink}" style="max-width:100%; border:1px solid #ddd; margin:10px 0; border-radius:5px;"></a>`;
             }
-            
             let optionsHTML = '<ul style="list-style:none; padding:0; margin:10px 0;">';
             q.options.forEach((opt, i) => {
                 let isAnswer = (i+1 === q.answer) ? 'color:#28a745; font-weight:bold;' : 'color:#555;';
                 optionsHTML += `<li style="${isAnswer} margin-bottom:5px;">${`①②③④⑤`.charAt(i)} ${opt}</li>`;
             });
             optionsHTML += '</ul>';
-
             let deleteBtnHTML = "";
-            if(listType === 'saved') {
-                deleteBtnHTML = `<button class="del-btn" onclick="removeSaved(${q.qNum})">🗑️ 삭제하기</button>`;
-            } else if (listType === 'wrong') {
-                deleteBtnHTML = `<button class="del-btn" onclick="removeWrong(${q.qNum})">🗑️ 삭제하기</button>`;
-            }
-
+            if (listType === 'saved') deleteBtnHTML = `<button class="del-btn" onclick="removeSaved(${idx})">🗑️ 삭제하기</button>`;
+            else if (listType === 'wrong') deleteBtnHTML = `<button class="del-btn" onclick="removeWrong(${idx})">🗑️ 삭제하기</button>`;
             container.innerHTML += `
             <div class="list-item">
                 <div class="list-header">
