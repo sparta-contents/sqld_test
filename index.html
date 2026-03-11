@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SQLD 실전 모의고사 앱</title>
+    <link rel="icon" type="image/png" href="simbol-logo.png">
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="SQLD 복원 문제집 | TEAMSPARTA">
+    <meta property="og:description" content="SQLD 자격증 대비 복원 문제로 실전 연습. 순차/랜덤 풀기, 저장·오답노트 지원.">
+    <meta property="og:image" content="simbol-logo.png">
+    <meta property="og:image:alt" content="TEAMSPARTA SQLD 복원 문제집">
     <style>
         body { font-family: 'Malgun Gothic', sans-serif; background-color: #f0f4f8; display: flex; justify-content: center; padding: 20px; color: #333; margin: 0; }
         .app-container { background-color: #fff; max-width: 800px; width: 100%; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); padding: 30px; line-height: 1.6; position: relative; min-height: 500px; }
@@ -69,7 +76,18 @@
         }
 
         .company-logo{
-            height:32px;
+            height: 32px;
+            cursor: pointer;
+            display: block;
+        }
+
+        .app-footer{
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid #e9ecef;
+            text-align: center;
+            font-size: 0.85rem;
+            color: #6c757d;
         }
     </style>
 </head>
@@ -78,13 +96,13 @@
 <div class="app-container">
     <div class="app-header">
         <div class="header-left">
-            <button class="home-btn" onclick="goHome()">🏠 SQLD 홈</button>
+            <img src="logo.png" class="company-logo" alt="홈" title="SQLD 홈" onclick="goHome()">
         </div>
         <div id="header-right"></div>
     </div>
 
     <div id="home-area">
-        <h1 style="text-align: center; color: #333; margin-top: 5px;">환영합니다!</h1>
+        <h1 style="text-align: center; color: #333; margin-top: 5px;">SQLD 복원 문제집 입니다</h1>
         <p style="text-align: center; color: #666; margin-bottom: 25px;">원하는 학습 메뉴를 선택하세요.</p>
         
         <div class="home-menu">
@@ -147,6 +165,8 @@
         <h2 id="list-title" style="border-bottom: 2px solid #333; padding-bottom: 10px;">목록</h2>
         <div id="list-container"></div>
     </div>
+
+    <footer class="app-footer">Copyright ©2026 TEAMSPARTA. All rights reserved.</footer>
 
 </div>
 
